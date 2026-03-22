@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>VB Simulator - Order System</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <style>
+        body {
+            background-color: #1a1a1a;
+            color: #00ff00;
+            font-family: 'Courier New', Courier, monospace;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+        }
+
+        h2 { text-shadow: 0 0 10px #00ff00; text-align: center; }
+
+        /* Сетка кнопок */
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr); /* Две колонки для удобства чтения названий */
+            gap: 10px;
+            margin-bottom: 20px;
+            max-width: 800px;
+            width: 100%;
+        }
+
+        .item-btn {
+            padding: 10px;
+            background: #333;
+            border: 1px solid #00ff00;
+            color: #00ff00;
+            cursor: pointer;
+            font-weight: bold;
+            transition: 0.3s;
+            text-align: left;
+        }
+
+        .item-btn:hover:not(:disabled) { background: #00ff00; color: black; }
+        .item-btn.selected { background: #ff00ff; color: white; border-color: #ff00ff; }
+        
+        .item-btn:disabled {
+            border-color: #555;
+            color: #555;
+            cursor: not-allowed;
+        }
+
+        /* Окно анализа */
+        #status-box {
+            margin: 20px;
+            height: 30px;
+            font-size: 1.2em;
+            text-align: center;
+        }
+
+        #order-btn {
+            padding: 15px 40px;
+            font-size: 18px;
+            background: #aa0000;
+            color: white;
+            border: none;
+            cursor: pointer;
+            box-shadow: 0 0 15px rgba(255,0,0,0.5);
+        }
+
+        #order-btn:disabled { background: #444; box-shadow: none; cursor: not-allowed; }
+
+        /* Контейнер для QR */
+        #qr-container {
+            margin-top: 30px;
+            padding: 20px;
+            background: white;
+            display: none; 
+            border-radius: 10px;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        #qr-info {
+            margin-top: 10px;
+            color: #000;
+            text-align: center;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+    <h2>СИСТЕМА ЗАКАЗА</h2>
+    
+    <div class="grid" id="buttonGrid"></div>
+
+    <button id="order-btn" onclick="startOrder()">ЗАКАЗАТЬ</button>
+
+    <div id="status-box"></div>
+
+    <div id="qr-container">
+        <div id="qrcode"></div>
+        <div id="qr-info"></div>
+    </div>
+
+    <script>
+        let selectedProduct = null;
+        let selectedProductName = "";
+        const grid = document.getElementById('buttonGrid');
+        const statusBox = document.getElementById('status-box');
+        const qrContainer = document.getElementById('qr-container');
+        const qrInfo = document.getElementById('qr-info');
+
+        // Список товаров согласно вашему запросу
+        const products = [
+            "Нож", "Геймпад", "Клавиатура", "Куртка", "Машина",
+            "Автомат", "Руль от машинки", "Духи", "Синий стул", "Товара нет в наличии",
+            "Подушка", "Самолет", "Товара нет в наличии", "Игрушка мягкая", "Сумка",
+            "Товара нет в наличии", "Дохлый носок", "Ремень", "Товара нет в наличии", "Мягкая подушка",
+            "Лампа Куроми", "Товара нет", "Мягкая игрушка"
+        ];
+
+        // Создание кнопок на основе списка
+        products.forEach((name, index) => {
+            const btn = document.createElement('button');
+            const itemNumber = index + 1;
+            btn.innerText = itemNumber + ". " + name;
+            btn.className = 'item-btn';
+            
+            // Проверка на наличие
+            if (name.toLowerCase().includes("нет в наличии") || name.toLowerCase() === "товара нет") {
+                btn.disabled = true;
+            } else {
+                btn.onclick = function() {
+                    document.querySelectorAll('.item-btn').forEach(b => b.classList.remove('selected'));
+                    this.classList.add('selected');
+                    selectedProduct = itemNumber;
+                    selectedProductName = name;
+                    statusBox.innerText = "Выбран: " + name;
+                    qrContainer.style.display = 'none';
+                };
+            }
+            grid.appendChild(btn);
+        });
+
+        function startOrder() {
+            if (!selectedProduct) {
+                alert("Сначала выбери товар!");
+                return;
+            }
+
+            qrContainer.style.display = 'none';
+            let steps = ["Инициализация...", "Связь со складом...", "Проверка: " + selectedProductName, "Шифрование данных...", "Готово!"];
+            let i = 0;
+
+            const interval = setInterval(() => {
+                statusBox.innerText = steps[i];
+                i++;
+                if (i >= steps.length) {
+                    clearInterval(interval);
+                    generateQR();
+                }
+            }, 600);
+        }
+
+        function generateQR() {
+            const qrDiv = document.getElementById('qrcode');
+            qrDiv.innerHTML = ""; 
+            
+            const secretCode = "ITEM_" + selectedProduct + "_SECURE_" + Math.floor(Math.random() * 9000 + 1000);
+
+            new QRCode(qrDiv, {
+                text: secretCode,
+                width: 150,
+                height: 150
+            });
+
+            qrContainer.style.display = 'flex';
+            qrInfo.innerText = "Товар: " + selectedProductName + "\nID: " + secretCode;
+        }
+    </script>
+</body>
+</html>
